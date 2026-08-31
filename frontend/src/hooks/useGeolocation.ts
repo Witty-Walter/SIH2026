@@ -14,8 +14,8 @@ export function useGeolocation() {
       (err) => {
         console.warn(err);
         setError(`Location denied: ${err.message}. Using fallback.`);
-        // Fallback to RGIPT Jais, Amethi so the demo works for you
-        setCoords({ lat: 26.2625, lon: 81.5435 }); 
+        // Fallback to Chennai so the demo works for you
+        setCoords({ lat: 13.0827, lon: 80.2707 }); 
       },
       { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 }
     );

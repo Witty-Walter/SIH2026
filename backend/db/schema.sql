@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS pfz_zones (
     probability     VARCHAR(10) NOT NULL,          -- 'HIGH', 'MEDIUM', 'LOW'
     sst_celsius     FLOAT,
     chlorophyll_mgm3 FLOAT,
-    geom            GEOMETRY(Polygon, 4326) NOT NULL,
+    geom            GEOMETRY(Geometry, 4326) NOT NULL,
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_pfz_geom ON pfz_zones USING GIST(geom);

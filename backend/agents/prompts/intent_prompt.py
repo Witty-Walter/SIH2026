@@ -14,4 +14,6 @@ Return ONLY valid JSON matching this schema:
 
 If the user references a previously mentioned zone without naming it directly (e.g. "there", "that area"), set zone_name to null. The system will handle resolving the context.
 If no specific time is mentioned, default time to "now".
+Set action to "find_pfz" and user_wants_alternatives to true if the user is asking for zone recommendations (e.g. "where should I go?", "best fishing spot?").
+Set user_wants_alternatives to false if they are asking about a specific named zone.
 """

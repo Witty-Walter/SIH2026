@@ -2,7 +2,8 @@
 // We need "use client" because react-leaflet relies on window object which breaks SSR
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { GeoJSONFeatureCollection, GeoJSONFeature } from "@/types/api";
 
@@ -15,6 +16,35 @@ function styleFeature(feature: any) {
     weight: 2,
     dashArray: p.status === "RESTRICTED" ? "5, 5" : ""
   };
+}
+
+function BoundsFitter({ data, userCoords }: { data: any, userCoords: any }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!data && !userCoords) return;
+    
+    const bounds = L.latLngBounds([]);
+    if (userCoords) {
+      bounds.extend([userCoords.lat, userCoords.lon]);
+    }
+    
+    if (data && data.features) {
+      data.features.forEach((f: any) => {
+        if (f.geometry.type === 'Point') {
+          bounds.extend([f.geometry.coordinates[1], f.geometry.coordinates[0]]);
+        } else if (f.geometry.type === 'Polygon') {
+          f.geometry.coordinates[0].forEach((coord: any) => {
+             bounds.extend([coord[1], coord[0]]);
+          });
+        }
+      });
+    }
+    
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
+    }
+  }, [data, userCoords, map]);
+  return null;
 }
 
 export default function MapPanel({ 
@@ -53,10 +83,12 @@ export default function MapPanel({
         zoomControl={false}
       >
         <TileLayer 
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          attribution='Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
         />
         
+        <BoundsFitter data={mapData} userCoords={userCoords} />
+
         {mapData && (
           <GeoJSON 
             key={layerKey} 

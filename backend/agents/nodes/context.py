@@ -1,5 +1,7 @@
 from agents.state import AgentState
 from db.connection import db
+import asyncio
+from app.services.incois.dynamic import compute_dynamic_pfzs
 
 async def context_node(state: AgentState) -> dict:
     intent = state.get("intent", {})
@@ -51,12 +53,25 @@ async def context_node(state: AgentState) -> dict:
     if not current_location.get("target_polygon_wkt") and "user_lat" in current_location:
         lat = current_location["user_lat"]
         lon = current_location["user_lon"]
-        # Create a small bbox around the user
+        # Create a large bbox around the user (100km radius) so it reaches the ocean
         current_location["target_bbox"] = {
-            "min_lat": lat - 0.1, "max_lat": lat + 0.1,
-            "min_lon": lon - 0.1, "max_lon": lon + 0.1
+            "min_lat": lat - 1.0, "max_lat": lat + 1.0,
+            "min_lon": lon - 1.0, "max_lon": lon + 1.0
         }
         # Point WKT
         current_location["target_polygon_wkt"] = f"POINT({lon} {lat})"
         
-    return {"current_location": current_location}
+    # Execute Dynamic PFZ engine if we have a bbox
+    dynamic_pfzs = []
+    if current_location.get("target_bbox"):
+        loop = asyncio.get_event_loop()
+        dynamic_pfzs = await loop.run_in_executor(
+            None, 
+            compute_dynamic_pfzs, 
+            current_location["target_bbox"]
+        )
+        
+    return {
+        "current_location": current_location,
+        "dynamic_pfzs": dynamic_pfzs
+    }

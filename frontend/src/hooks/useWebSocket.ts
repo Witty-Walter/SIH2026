@@ -63,6 +63,11 @@ export function useWebSocket(sessionId: string) {
       type: "message", text, session_id: sessionId,
       context: { user_lat: lat, user_lon: lon, location_source: "gps" }
     };
+    if (wsRef.current?.readyState !== WebSocket.OPEN) {
+      setStatusMsg("Connecting to server... please try again in a moment.");
+      return;
+    }
+    
     setIsLoading(true); 
     setStreamingText(""); 
     setAlerts([]);

@@ -15,17 +15,24 @@ async def ocean_node(state: AgentState) -> dict:
         
     iso_time = target_date.strftime("%Y-%m-%dT%H:00:00Z")
     
-    # Extract area. The context node resolves the target_zone_id.
-    # For this MVP test, we fallback to our mocked AREA_001
+    # Extract area. The context node resolves the target_zone_id or creates a target_bbox.
     context = state.get("current_location", {})
-    area_id = context.get("target_zone_id") or "AREA_001"
+    area_id = context.get("target_zone_id") or "CUSTOM_USER_POINT"
+    bbox_str = None
+    if "target_bbox" in context:
+        b = context["target_bbox"]
+        bbox_str = f"{b['min_lat']},{b['max_lat']},{b['min_lon']},{b['max_lon']}"
     
     try:
         async with httpx.AsyncClient() as client:
+            params = {"area_id": area_id, "start_time": iso_time}
+            if bbox_str:
+                params["bbox"] = bbox_str
+                
             # Call our own normalized Copernicus endpoint
             r = await client.get(
                 "http://127.0.0.1:8000/marine-data",
-                params={"area_id": area_id, "start_time": iso_time},
+                params=params,
                 timeout=60.0
             )
             r.raise_for_status()

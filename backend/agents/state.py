@@ -69,6 +69,7 @@ class AgentState(TypedDict):
     pfz_data: Optional[PFZData]
     risk_result: Optional[RiskResult]
     alternative_zones: Optional[List[AlternativeZone]]
+    dynamic_pfzs: Optional[List[dict]]
 
     # Output
     response_text: Optional[str]

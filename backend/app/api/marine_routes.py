@@ -18,11 +18,16 @@ cache = TTLCache(maxsize=100, ttl=3600)
 async def get_marine_data(
     area_id: str = Query(..., description="The ID of the fishing area or polygon"),
     start_time: str = Query(None, description="ISO timestamp for observation or forecast"),
-    variables: str = Query("sst", description="Comma separated list of variables to fetch")
+    variables: str = Query("sst", description="Comma separated list of variables to fetch"),
+    bbox: str = Query(None, description="Optional custom bbox formatted as min_lat,max_lat,min_lon,max_lon")
 ):
     try:
         # 1. Resolve area_id to geographic bounding box
-        min_lat, max_lat, min_lon, max_lon = resolve_area_to_bbox(area_id)
+        if bbox:
+            parts = bbox.split(",")
+            min_lat, max_lat, min_lon, max_lon = float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])
+        else:
+            min_lat, max_lat, min_lon, max_lon = await resolve_area_to_bbox(area_id)
         
         # 2. Call Copernicus and Weather services concurrently
         # For weather, we use the centroid of the bounding box

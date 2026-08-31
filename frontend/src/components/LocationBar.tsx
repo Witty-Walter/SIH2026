@@ -11,8 +11,8 @@ export function LocationBar({
   setCoords: (coords: {lat: number, lon: number}) => void,
   error: string | null 
 }) {
-  const [mockLat, setMockLat] = useState("15.0");
-  const [mockLon, setMockLon] = useState("70.0");
+  const [mockLat, setMockLat] = useState("13.0827");
+  const [mockLon, setMockLon] = useState("80.2707");
 
   return (
     <div className="flex flex-col space-y-2 bg-slate-800 p-3 rounded-lg border border-slate-700 shadow-sm">
@@ -56,7 +56,7 @@ export function LocationBar({
           className="w-16 bg-slate-900 border border-slate-600 text-slate-200 text-xs p-1 rounded outline-none"
         />
         <button 
-          onClick={() => setCoords({ lat: parseFloat(mockLat) || 15.0, lon: parseFloat(mockLon) || 70.0 })}
+          onClick={() => setCoords({ lat: parseFloat(mockLat) || 13.0827, lon: parseFloat(mockLon) || 80.2707 })}
           className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded text-xs transition-colors font-medium"
         >
           Set Mock

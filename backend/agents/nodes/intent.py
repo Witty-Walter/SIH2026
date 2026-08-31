@@ -7,7 +7,7 @@ import json
 
 # Initialize LLM, using Groq with JSON mode
 llm = ChatGroq(
-    model="openai/gpt-oss-20b",
+    model="openai/gpt-oss-120b",
     temperature=0, 
     api_key=settings.groq_api_key,
     model_kwargs={"response_format": {"type": "json_object"}}

@@ -3,8 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from db.connection import db
 from agents.graph import build_graph
 from app.api.marine_routes import router as marine_router
+from app.services.imd.client import fetch_and_store_imd_alerts
+from app.services.incois.client import fetch_and_store_incois_pfz
 import json
 import uuid
+import asyncio
 
 app = FastAPI(title="Marine Intelligence API")
 
@@ -23,10 +26,27 @@ graph = build_graph()
 @app.on_event("startup")
 async def startup():
     await db.connect()
+    # Fetch live IMD cyclone alerts and compute PFZs on startup
+    await fetch_and_store_imd_alerts()
+    await fetch_and_store_incois_pfz()
+    
+    async def _refresh_alerts_loop():
+        while True:
+            await asyncio.sleep(6 * 3600)
+            await fetch_and_store_imd_alerts()
+            await fetch_and_store_incois_pfz()
+            
+    asyncio.create_task(_refresh_alerts_loop())
 
 @app.on_event("shutdown")
 async def shutdown():
     await db.disconnect()
+
+@app.post("/admin/refresh-pfz")
+async def admin_refresh_pfz():
+    """Admin endpoint to manually trigger PFZ computation for demos."""
+    count = await fetch_and_store_incois_pfz()
+    return {"status": "success", "inserted_zones": count}
 
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):
@@ -69,6 +89,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 session_state["user_language"] = final_state.get("user_language", "en")
                 if final_state.get("selected_area_id"):
                     session_state["selected_area_id"] = final_state.get("selected_area_id")
+                # Persist location context so user_lat/lon are available on future turns
+                if final_state.get("current_location"):
+                    session_state["current_location"] = final_state.get("current_location")
                     
                 # Stream back map updates and text
                 if "map_data" in final_state:
@@ -77,8 +100,16 @@ async def websocket_endpoint(websocket: WebSocket):
                         "data": final_state["map_data"]
                     })
                     
-                # Mock sending an alert if risk status is UNSAFE
-                if final_state.get("risk_result", {}).get("status") == "UNSAFE":
+                # Send live cyclone alert if GIS detected one
+                gis_data = final_state.get("gis_data", {})
+                if gis_data.get("cyclone_alert"):
+                    await websocket.send_json({
+                        "type": "alert",
+                        "severity": gis_data.get("cyclone_alert_severity", 3),
+                        "alert_type": "CYCLONE",
+                        "message": gis_data.get("cyclone_alert_title", "IMD Cyclone Warning active in this area!")
+                    })
+                elif final_state.get("risk_result", {}).get("status") == "UNSAFE":
                     await websocket.send_json({
                         "type": "alert",
                         "severity": 3,

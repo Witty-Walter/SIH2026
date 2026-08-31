@@ -6,7 +6,7 @@ from config import settings
 import json
 
 llm = ChatGroq(
-    model="openai/gpt-oss-20b",
+    model="openai/gpt-oss-120b",
     temperature=0.3, # Slightly more creative for natural language 
     api_key=settings.groq_api_key
 )
@@ -16,6 +16,9 @@ async def explainer_node(state: AgentState) -> dict:
     ocean_data_raw = state.get("ocean_data", [])
     pfz_data = state.get("pfz_data", {})
     target_lang = state.get("user_language", "en")
+    alternative_zones = state.get("alternative_zones", [])
+    
+    user_question = state.get("messages", [])[-1].content if state.get("messages") else "Assess safety"
     
     # Flatten ocean data for the LLM if it's a list of observations
     ocean_dict = {obs["variable"]: obs["value"] for obs in ocean_data_raw} \
@@ -24,12 +27,13 @@ async def explainer_node(state: AgentState) -> dict:
     context_data = {
         "risk": risk_result,
         "ocean": ocean_dict,
-        "pfz": pfz_data
+        "pfz": pfz_data,
+        "alternative_zones": alternative_zones
     }
     
     prompt = [
         SystemMessage(content=EXPLAINER_SYSTEM),
-        HumanMessage(content=f"Explain this data to the user. Ensure the response is in language code: {target_lang}\n\nData: {json.dumps(context_data, indent=2)}")
+        HumanMessage(content=f"User's Question: {user_question}\n\nExplain this data and answer the user's question directly. Ensure the response is in language code: {target_lang}\n\nData: {json.dumps(context_data, indent=2)}")
     ]
     
     try:
