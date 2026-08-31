@@ -26,7 +26,7 @@ async def ocean_node(state: AgentState) -> dict:
             r = await client.get(
                 "http://127.0.0.1:8000/marine-data",
                 params={"area_id": area_id, "start_time": iso_time},
-                timeout=15.0
+                timeout=60.0
             )
             r.raise_for_status()
             ocean_data = r.json()

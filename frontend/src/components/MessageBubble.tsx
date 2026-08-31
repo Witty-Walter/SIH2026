@@ -1,4 +1,6 @@
 import { RiskBadge } from "./RiskBadge";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export function MessageBubble({ role, text, status }: { role: "user" | "assistant", text: string, status?: string }) {
   const isUser = role === "user";
@@ -15,8 +17,14 @@ export function MessageBubble({ role, text, status }: { role: "user" | "assistan
             <RiskBadge status={status} />
           </div>
         )}
-        <div className="text-sm leading-relaxed whitespace-pre-wrap">
-          {text}
+        <div className={`text-sm leading-relaxed ${isUser ? 'whitespace-pre-wrap' : 'prose prose-invert max-w-none prose-sm prose-td:p-2 prose-th:p-2 prose-table:border-collapse prose-table:w-full prose-tr:border-b prose-tr:border-slate-700'}`}>
+          {isUser ? (
+            text
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {text}
+            </ReactMarkdown>
+          )}
         </div>
       </div>
     </div>

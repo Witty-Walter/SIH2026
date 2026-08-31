@@ -44,7 +44,7 @@ export function useWebSocket(sessionId: string) {
     
     wsRef.current.onclose = () => {
       setIsLoading(false);
-      setStatusMsg("Connection closed.");
+      setStatusMsg(prev => prev.startsWith("Error:") ? prev : "Connection closed.");
     };
 
     wsRef.current.onerror = () => {

@@ -4,6 +4,8 @@ import pandas as pd
 from datetime import datetime, timezone
 from config import settings
 
+_dataset_cache = {}
+
 def get_sst(min_lat: float, max_lat: float, min_lon: float, max_lon: float, time_str: str = None) -> dict:
     """
     Returns SST data for a specific bounding box from Copernicus using xarray spatial/temporal subsetting.
@@ -12,11 +14,13 @@ def get_sst(min_lat: float, max_lat: float, min_lon: float, max_lon: float, time
     
     try:
         # Open virtual dataset - avoids downloading the entire ocean!
-        ds = copernicusmarine.open_dataset(
-            dataset_id=dataset_id,
-            username=settings.copernicus_username,
-            password=settings.copernicus_password
-        )
+        if dataset_id not in _dataset_cache:
+            _dataset_cache[dataset_id] = copernicusmarine.open_dataset(
+                dataset_id=dataset_id,
+                username=settings.copernicus_username,
+                password=settings.copernicus_password
+            )
+        ds = _dataset_cache[dataset_id]
         
         # Spatial subset
         ds_subset = ds.sel(
@@ -60,11 +64,13 @@ def get_chlorophyll(min_lat: float, max_lat: float, min_lon: float, max_lon: flo
     dataset_id = "cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m"
     
     try:
-        ds = copernicusmarine.open_dataset(
-            dataset_id=dataset_id,
-            username=settings.copernicus_username,
-            password=settings.copernicus_password
-        )
+        if dataset_id not in _dataset_cache:
+            _dataset_cache[dataset_id] = copernicusmarine.open_dataset(
+                dataset_id=dataset_id,
+                username=settings.copernicus_username,
+                password=settings.copernicus_password
+            )
+        ds = _dataset_cache[dataset_id]
         
         ds_subset = ds.sel(
             latitude=slice(min_lat, max_lat),

@@ -15,7 +15,6 @@ router = APIRouter(prefix="/marine-data", tags=["Marine"])
 cache = TTLCache(maxsize=100, ttl=3600)
 
 @router.get("", response_model=List[MarineObservation])
-@cached(cache)
 async def get_marine_data(
     area_id: str = Query(..., description="The ID of the fishing area or polygon"),
     start_time: str = Query(None, description="ISO timestamp for observation or forecast"),

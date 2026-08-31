@@ -24,14 +24,15 @@ async def map_builder_node(state: AgentState) -> dict:
         
     # 2. Add Target Zone (if polygon exists)
     if wkt and wkt.startswith("POLYGON"):
-        # Very hacky WKT to GeoJSON coordinate conversion for MVP
         # WKT: POLYGON((lon lat, lon lat, ...))
-        coord_str = wkt.replace("POLYGON((", "").replace("))", "")
+        # Handle optional space after POLYGON
+        coord_str = wkt.replace("POLYGON", "").replace("(", "").replace(")", "")
         pairs = coord_str.split(",")
         coords = []
         for pair in pairs:
-            lon, lat = pair.strip().split()
-            coords.append([float(lon), float(lat)])
+            parts = pair.strip().split()
+            if len(parts) >= 2:
+                coords.append([float(parts[0]), float(parts[1])])
             
         color = "#22c55e" # Green
         if risk.get("status") == "CAUTION": color = "#eab308" # Yellow
