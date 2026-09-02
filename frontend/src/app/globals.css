@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 15, 23, 42; /* tailwind slate-900 */
-  --background-end-rgb: 15, 23, 42;
+  --foreground-rgb: 244, 247, 245; /* offwhite */
+  --background-start-rgb: 18, 18, 18; /* #121212 RGB */
+  --background-end-rgb: 18, 18, 18;
 }
 
 body {
@@ -17,9 +17,23 @@ body {
   overflow: hidden;
 }
 
-/* Leaflet overrides for dark mode */
+/* Leaflet overrides for marine theme */
 .leaflet-container {
-  background: #1e293b !important; /* slate-800 */
+  background: #121212 !important; 
+}
+
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper {
+  background: rgba(18, 18, 18, 0.85) !important;
+  backdrop-filter: blur(12px);
+  color: #F4F7F5 !important;
+  border: 1px solid rgba(63, 63, 70, 0.5); /* Zinc 700 */
+  border-radius: 12px !important;
+}
+.leaflet-popup-tip {
+  background: rgba(18, 18, 18, 0.85) !important;
+  border-top: 1px solid rgba(63, 63, 70, 0.5);
+  border-left: 1px solid rgba(63, 63, 70, 0.5);
 }
 
 /* Custom scrollbar for chat */

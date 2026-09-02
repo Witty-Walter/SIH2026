@@ -1,4 +1,4 @@
-export type FrameType = "status" | "alert" | "text_chunk" | "map_update" | "done";
+export type FrameType = "status" | "alert" | "text_chunk" | "map_update" | "done" | "error";
 
 export interface StatusFrame   { type: "status"; message: string; }
 export interface AlertFrame    { type: "alert"; severity: 1|2|3; alert_type: string; message: string; }
@@ -6,7 +6,9 @@ export interface TextChunkFrame { type: "text_chunk"; chunk: string; }
 export interface MapUpdateFrame { type: "map_update"; data: GeoJSONFeatureCollection; }
 export interface DoneFrame     { type: "done"; }
 
-export type ServerFrame = StatusFrame | AlertFrame | TextChunkFrame | MapUpdateFrame | DoneFrame;
+export interface ErrorFrame    { type: "error"; message: string; }
+
+export type ServerFrame = StatusFrame | AlertFrame | TextChunkFrame | MapUpdateFrame | DoneFrame | ErrorFrame;
 
 export interface ClientMessage {
   type: "message";

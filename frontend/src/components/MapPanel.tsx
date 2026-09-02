@@ -9,12 +9,19 @@ import { GeoJSONFeatureCollection, GeoJSONFeature } from "@/types/api";
 
 function styleFeature(feature: any) {
   const p = feature.properties;
+  
+  let baseColor = "#3F3F46"; // marine teal (zinc-700)
+  if (p.status === "SAFE") baseColor = "#3FA66E";
+  else if (p.status === "CAUTION") baseColor = "#E08A2C";
+  else if (p.status === "UNSAFE" || p.status === "RESTRICTED") baseColor = "#D93838";
+
   return { 
-    color: p.color || "#3388ff", 
-    fillColor: p.color || "#3388ff", 
-    fillOpacity: p.fill_opacity || 0.2, 
-    weight: 2,
-    dashArray: p.status === "RESTRICTED" ? "5, 5" : ""
+    color: baseColor, 
+    fillColor: baseColor, 
+    fillOpacity: 0.25, 
+    weight: p.status === "RESTRICTED" ? 2 : 1,
+    dashArray: p.status === "RESTRICTED" ? "5, 5" : "",
+    className: 'transition-all duration-500 hover:fill-opacity-50' // Add a little Tailwind hover magic if supported by the SVG
   };
 }
 
@@ -72,10 +79,10 @@ export default function MapPanel({
     });
   }, []);
 
-  if (!mounted) return <div className="h-full w-full bg-slate-800 animate-pulse flex items-center justify-center">Loading Map...</div>;
+  if (!mounted) return <div className="h-full w-full bg-marine-navy animate-pulse flex items-center justify-center font-mono text-marine-teal">INITIALIZING TELEMETRY...</div>;
 
   return (
-    <div className="relative h-full w-full bg-slate-800">
+    <div className="relative h-full w-full bg-marine-navy">
       <MapContainer 
         center={[15.0, 74.0]} 
         zoom={5} 
@@ -96,11 +103,31 @@ export default function MapPanel({
             style={styleFeature}
             onEachFeature={(feature: any, layer: any) => {
               const p = feature.properties;
-              let popupContent = `<div style="color: #333; font-family: sans-serif;">`;
-              popupContent += `<h3 style="margin:0 0 4px 0; font-size: 14px; font-weight: bold;">${p.label}</h3>`;
-              if (p.status) popupContent += `<div><b>Status:</b> ${p.status}</div>`;
-              if (p.safety_score) popupContent += `<div><b>Safety:</b> ${p.safety_score}/100</div>`;
-              if (p.fishing_score) popupContent += `<div><b>Fishing:</b> ${p.fishing_score}/100</div>`;
+              let popupContent = `<div class="font-sans text-marine-offwhite">`;
+              popupContent += `<h3 class="m-0 mb-2 pb-1 border-b border-marine-teal/30 text-sm font-bold tracking-wider uppercase">${p.label}</h3>`;
+              
+              if (p.status) {
+                let color = "#F4F7F5";
+                if (p.status === "SAFE") color = "#3FA66E";
+                if (p.status === "CAUTION") color = "#E08A2C";
+                if (p.status === "UNSAFE" || p.status === "RESTRICTED") color = "#D93838";
+                popupContent += `<div class="flex justify-between items-center text-xs mb-1">
+                                   <span class="text-marine-offwhite/50 uppercase font-bold tracking-widest text-[9px]">Status</span>
+                                   <span style="color: ${color}" class="font-bold tracking-widest">${p.status}</span>
+                                 </div>`;
+              }
+              if (p.safety_score) {
+                popupContent += `<div class="flex justify-between items-center text-xs mb-1">
+                                   <span class="text-marine-offwhite/50 uppercase font-bold tracking-widest text-[9px]">Safety</span>
+                                   <span class="font-mono font-bold">${p.safety_score}/100</span>
+                                 </div>`;
+              }
+              if (p.fishing_score) {
+                popupContent += `<div class="flex justify-between items-center text-xs">
+                                   <span class="text-marine-offwhite/50 uppercase font-bold tracking-widest text-[9px]">Fishing</span>
+                                   <span class="font-mono font-bold">${p.fishing_score}/100</span>
+                                 </div>`;
+              }
               popupContent += `</div>`;
               layer.bindPopup(popupContent);
             }}
@@ -110,10 +137,16 @@ export default function MapPanel({
         {userCoords && (
           <Marker position={[userCoords.lat, userCoords.lon]}>
             <Popup>
-              <div style={{ color: "#333", fontFamily: "sans-serif" }}>
-                <h3 style={{ margin: "0 0 4px 0", fontSize: "14px", fontWeight: "bold" }}>Your Location</h3>
-                <div>Lat: {userCoords.lat.toFixed(4)}</div>
-                <div>Lon: {userCoords.lon.toFixed(4)}</div>
+              <div className="font-sans text-marine-offwhite">
+                <h3 className="m-0 mb-2 pb-1 border-b border-marine-teal/30 text-sm font-bold tracking-wider uppercase text-marine-teal">Current Location</h3>
+                <div className="flex justify-between items-center text-xs mb-1">
+                   <span className="text-marine-offwhite/50 uppercase font-bold tracking-widest text-[9px] mr-4">Lat</span>
+                   <span className="font-mono font-bold">{userCoords.lat.toFixed(4)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                   <span className="text-marine-offwhite/50 uppercase font-bold tracking-widest text-[9px] mr-4">Lon</span>
+                   <span className="font-mono font-bold">{userCoords.lon.toFixed(4)}</span>
+                </div>
               </div>
             </Popup>
           </Marker>

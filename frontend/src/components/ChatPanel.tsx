@@ -16,7 +16,7 @@ interface ChatPanelProps {
 export function ChatPanel({ streamingText, finalText, statusMsg, isLoading, mapData, sendMessage, stopGeneration, userCoords }: ChatPanelProps) {
   const [input, setInput] = useState("");
   // Simple local state to keep track of user messages for the UI
-  const [history, setHistory] = useState<{role: "user"|"assistant", text: string, status?: string}[]>([]);
+  const [history, setHistory] = useState<{role: "user"|"assistant", text: string, status?: string, pfzStatus?: string, fishingScore?: number}[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // When final text arrives from backend, append it to history
@@ -24,11 +24,55 @@ export function ChatPanel({ streamingText, finalText, statusMsg, isLoading, mapD
     if (finalText) {
       // Find the status from mapData if available
       let riskStatus = "UNKNOWN";
+      let pfzStatus = "UNKNOWN";
+      let fishingScore = 0;
       if (mapData && mapData.features.length > 0) {
-         const target = mapData.features.find(f => f.properties.label === "Target Area");
-         if (target) riskStatus = target.properties.status || "UNKNOWN";
+         const validRiskStatuses = ["SAFE", "CAUTION", "UNSAFE"];
+         
+         let target = mapData.features.find(f => f.properties.label === "Target Area" && validRiskStatuses.includes(f.properties.status));
+         if (!target) {
+            target = mapData.features.find(f => f.properties.label && f.properties.label.includes("RECOMMENDED") && validRiskStatuses.includes(f.properties.status));
+         }
+         if (!target) {
+            target = mapData.features.find(f => f.properties.status && validRiskStatuses.includes(f.properties.status));
+         }
+         
+         if (target) riskStatus = target.properties.status;
+         
+         // Extract PFZ / Fishing Status
+         const pfzTarget = mapData.features.find(f => f.properties.status && ["HIGH", "MEDIUM", "LOW"].includes(f.properties.status));
+         if (pfzTarget) {
+             pfzStatus = pfzTarget.properties.status;
+             if (pfzStatus === "HIGH") fishingScore = 85;
+             else if (pfzStatus === "MEDIUM") fishingScore = 55;
+             else if (pfzStatus === "LOW") fishingScore = 25;
+         } else {
+             const labelTarget = mapData.features.find(f => f.properties.label && f.properties.label.includes("Fishing:"));
+             if (labelTarget) {
+                 const match = labelTarget.properties.label.match(/Fishing:\s*(\d+)/);
+                 if (match) {
+                     fishingScore = parseInt(match[1]);
+                     if (fishingScore >= 70) pfzStatus = "HIGH";
+                     else if (fishingScore >= 40) pfzStatus = "MEDIUM";
+                     else pfzStatus = "LOW";
+                 }
+             }
+         }
       }
-      setHistory(prev => [...prev, { role: "assistant", text: finalText, status: riskStatus }]);
+      setHistory(prev => {
+        const newHistory = [...prev];
+        const lastItem = newHistory[newHistory.length - 1];
+        if (lastItem && lastItem.role === "assistant" && lastItem.text === finalText) {
+          // Update the existing item with new map statuses
+          lastItem.status = riskStatus;
+          lastItem.pfzStatus = pfzStatus;
+          lastItem.fishingScore = fishingScore;
+          return newHistory;
+        } else {
+          // Append new item
+          return [...newHistory, { role: "assistant", text: finalText, status: riskStatus, pfzStatus, fishingScore }];
+        }
+      });
     }
   }, [finalText, mapData]);
 
@@ -47,20 +91,23 @@ export function ChatPanel({ streamingText, finalText, statusMsg, isLoading, mapD
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 border-r border-slate-800 w-full max-w-md shadow-2xl relative z-10">
+    <div className="flex flex-col h-full bg-marine-navy/60 backdrop-blur-2xl border border-marine-teal/40 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden">
       
       {/* Header */}
-      <div className="p-4 border-b border-slate-800 bg-slate-900/95 backdrop-blur shrink-0 flex justify-between items-center">
+      <div className="p-5 border-b border-marine-teal/30 bg-marine-navy/40 shrink-0 flex items-center space-x-3">
+        <div className="w-12 h-12 flex items-center justify-center shrink-0">
+           <img src="/logo.png" alt="Marine Intel Logo" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(27,107,120,0.5)]" />
+        </div>
         <div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Marine Intel</h1>
-          <p className="text-xs text-slate-400">Agentic Safety & PFZ AI</p>
+          <h1 className="text-xl font-bold tracking-wide text-marine-offwhite">MARINE<span className="text-marine-teal font-light">INTEL</span></h1>
+          <p className="text-[10px] text-marine-offwhite/50 uppercase tracking-widest font-semibold">Safety Console Active</p>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-6">
         {history.map((msg, i) => (
-          <MessageBubble key={i} role={msg.role} text={msg.text} status={msg.status} />
+          <MessageBubble key={i} role={msg.role} text={msg.text} status={msg.status} pfzStatus={msg.pfzStatus} fishingScore={msg.fishingScore} />
         ))}
         
         {/* Streaming message */}
@@ -70,34 +117,34 @@ export function ChatPanel({ streamingText, finalText, statusMsg, isLoading, mapD
         
         {/* Loading Indicator */}
         {isLoading && !streamingText && (
-          <div className="flex items-center space-x-2 text-slate-500 text-sm p-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-            <span className="ml-2 font-mono text-xs">{statusMsg || "Thinking..."}</span>
+          <div className="flex items-center space-x-2 text-marine-teal text-sm p-4 bg-marine-navy/30 rounded-2xl border border-marine-teal/20 w-fit">
+            <div className="w-2 h-2 bg-marine-teal rounded-full animate-pulse" />
+            <div className="w-2 h-2 bg-marine-teal rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
+            <div className="w-2 h-2 bg-marine-teal rounded-full animate-pulse" style={{ animationDelay: "300ms" }} />
+            <span className="ml-2 font-mono text-xs text-marine-offwhite/70 uppercase tracking-widest">{statusMsg || "AWAITING TELEMETRY..."}</span>
           </div>
         )}
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-slate-800/50 backdrop-blur shrink-0 border-t border-slate-700">
-        <div className="flex items-end space-x-2">
-          <div className="flex-1 bg-slate-900 border border-slate-700 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all shadow-inner">
+      <div className="p-4 bg-marine-navy/80 shrink-0 border-t border-marine-teal/30">
+        <div className="flex items-end space-x-3">
+          <div className="flex-1 bg-marine-navy/50 border border-marine-teal/40 rounded-2xl overflow-hidden focus-within:border-marine-teal focus-within:ring-1 focus-within:ring-marine-teal transition-all shadow-inner">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
-              placeholder="Ask about fishing zones, safety, or weather..."
-              className="w-full max-h-32 min-h-[44px] bg-transparent text-sm text-slate-200 placeholder-slate-500 p-3 outline-none resize-none"
+              placeholder="Query safety conditions or fishing zones..."
+              className="w-full max-h-32 min-h-[44px] bg-transparent text-sm text-marine-offwhite placeholder-marine-offwhite/30 p-3.5 outline-none resize-none font-mono"
               rows={1}
             />
           </div>
           {isLoading ? (
             <button
               onClick={stopGeneration}
-              className="p-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center shrink-0"
+              className="p-3.5 bg-marine-danger hover:bg-red-500 text-marine-offwhite rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center shrink-0"
               title="Stop generating"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
@@ -106,7 +153,7 @@ export function ChatPanel({ streamingText, finalText, statusMsg, isLoading, mapD
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="p-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center shrink-0"
+              className="p-3.5 bg-gradient-to-r from-marine-teal to-blue-500 hover:from-marine-teal/80 hover:to-blue-500/80 disabled:from-marine-navy disabled:to-marine-navy disabled:border disabled:border-marine-teal/20 disabled:text-marine-offwhite/30 text-white rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
             </button>

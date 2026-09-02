@@ -33,32 +33,35 @@ export default function Home() {
   } = useWebSocket(sessionId || "default-session");
 
   return (
-    <main className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-200 font-sans">
+    <main className="relative h-screen w-screen overflow-hidden bg-marine-navy text-marine-offwhite font-sans">
       <AlertBanner alerts={alerts} />
       
-      {/* Left Panel: Chat */}
-      <ChatPanel 
-        streamingText={streamingText}
-        finalText={finalText}
-        statusMsg={statusMsg}
-        isLoading={isLoading}
-        mapData={mapData}
-        sendMessage={sendMessage}
-        stopGeneration={stopGeneration}
-        userCoords={coords}
-      />
-
-      {/* Right Panel: Map + Top Controls */}
-      <div className="flex-1 relative flex flex-col h-full">
-        <div className="absolute top-4 left-4 right-4 z-[400] flex justify-between pointer-events-none">
-          {/* Controls overlaid on map */}
-          <div className="pointer-events-auto">
-            <LocationBar onRequestLocation={requestLocation} coords={coords} setCoords={setCoords} error={gpsError} />
-          </div>
-        </div>
-        
-        {/* The map itself */}
+      {/* Background Map */}
+      <div className="absolute inset-0 z-0">
         <MapPanel mapData={mapData} userCoords={coords} />
+      </div>
+
+      {/* Floating Panels Overlay */}
+      <div className="absolute inset-0 z-10 pointer-events-none flex justify-between p-4">
+        
+        {/* Left Panel: Chat / Decision Console */}
+        <div className="pointer-events-auto h-full w-full max-w-md">
+          <ChatPanel 
+            streamingText={streamingText}
+            finalText={finalText}
+            statusMsg={statusMsg}
+            isLoading={isLoading}
+            mapData={mapData}
+            sendMessage={sendMessage}
+            stopGeneration={stopGeneration}
+            userCoords={coords}
+          />
+        </div>
+
+        {/* Right Panel: Top Controls */}
+        <div className="pointer-events-auto">
+          <LocationBar onRequestLocation={requestLocation} coords={coords} setCoords={setCoords} error={gpsError} />
+        </div>
       </div>
     </main>
   );

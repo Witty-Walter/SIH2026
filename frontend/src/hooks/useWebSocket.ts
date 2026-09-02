@@ -70,6 +70,7 @@ export function useWebSocket(sessionId: string) {
     
     setIsLoading(true); 
     setStreamingText(""); 
+    setFinalText("");
     setAlerts([]);
     wsRef.current?.send(JSON.stringify(msg));
   }, [sessionId]);
