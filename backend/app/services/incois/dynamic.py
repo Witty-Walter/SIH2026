@@ -10,10 +10,12 @@ def compute_dynamic_pfzs(bbox: dict) -> list:
     Computes PFZs dynamically for a given bounding box using Copernicus dataframes.
     Returns a list of GeoJSON Features representing HIGH and MEDIUM probability zones.
     """
-    min_lat = bbox["min_lat"]
-    max_lat = bbox["max_lat"]
-    min_lon = bbox["min_lon"]
-    max_lon = bbox["max_lon"]
+    # Add a 0.25 degree buffer (approx 25km) to ensure we capture coarse satellite grid points 
+    # even if the target bounding box is very small.
+    min_lat = bbox["min_lat"] - 0.25
+    max_lat = bbox["max_lat"] + 0.25
+    min_lon = bbox["min_lon"] - 0.25
+    max_lon = bbox["max_lon"] + 0.25
     
     sst_dataset_id = "cmems_mod_glo_phy_anfc_0.083deg_PT1H-m"
     chl_dataset_id = "cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m"

@@ -43,9 +43,23 @@ async def get_marine_data(
         )
         weather_task = get_weather(centroid_lat, centroid_lon, start_time)
         
-        copernicus_data, chl_data, weather_data_list = await asyncio.gather(
-            copernicus_sst_task, copernicus_chl_task, weather_task
+        results = await asyncio.gather(
+            copernicus_sst_task, copernicus_chl_task, weather_task,
+            return_exceptions=True
         )
+        
+        copernicus_data = results[0]
+        chl_data = results[1]
+        weather_data_list = results[2]
+        
+        # If Copernicus failed, we must raise
+        if isinstance(copernicus_data, Exception): raise copernicus_data
+        if isinstance(chl_data, Exception): raise chl_data
+        
+        # If Weather API failed (e.g. rate limit 429), just gracefully mock or omit
+        if isinstance(weather_data_list, Exception):
+            print(f"Weather API failed: {weather_data_list}. Gracefully degrading.")
+            weather_data_list = []
         
         # 3. Determine if this was an observation (past) or forecast (future)
         req_time = datetime.fromisoformat(start_time.replace('Z', '+00:00')) if start_time else datetime.now(timezone.utc)
