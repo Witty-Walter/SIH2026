@@ -27,8 +27,9 @@ graph = build_graph()
 async def startup():
     await db.connect()
     # Fetch live IMD cyclone alerts and compute PFZs on startup
-    await fetch_and_store_imd_alerts()
-    await fetch_and_store_incois_pfz()
+    # (Commented out to prevent Out Of Memory errors on Render free tier)
+    # await fetch_and_store_imd_alerts()
+    # await fetch_and_store_incois_pfz()
     
     async def _refresh_alerts_loop():
         while True:
