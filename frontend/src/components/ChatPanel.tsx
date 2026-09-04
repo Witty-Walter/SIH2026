@@ -29,19 +29,19 @@ export function ChatPanel({ streamingText, finalText, statusMsg, isLoading, mapD
       if (mapData && mapData.features.length > 0) {
          const validRiskStatuses = ["SAFE", "CAUTION", "UNSAFE"];
          
-         let target = mapData.features.find(f => f.properties.label === "Target Area" && validRiskStatuses.includes(f.properties.status));
+         let target = mapData.features.find(f => f.properties.label === "Target Area" && validRiskStatuses.includes(f.properties.status || ""));
          if (!target) {
-            target = mapData.features.find(f => f.properties.label && f.properties.label.includes("RECOMMENDED") && validRiskStatuses.includes(f.properties.status));
+            target = mapData.features.find(f => f.properties.label && f.properties.label.includes("RECOMMENDED") && validRiskStatuses.includes(f.properties.status || ""));
          }
          if (!target) {
-            target = mapData.features.find(f => f.properties.status && validRiskStatuses.includes(f.properties.status));
+            target = mapData.features.find(f => f.properties.status && validRiskStatuses.includes(f.properties.status || ""));
          }
          
-         if (target) riskStatus = target.properties.status;
+         if (target && target.properties.status) riskStatus = target.properties.status;
          
          // Extract PFZ / Fishing Status
-         const pfzTarget = mapData.features.find(f => f.properties.status && ["HIGH", "MEDIUM", "LOW"].includes(f.properties.status));
-         if (pfzTarget) {
+         const pfzTarget = mapData.features.find(f => f.properties.status && ["HIGH", "MEDIUM", "LOW"].includes(f.properties.status || ""));
+         if (pfzTarget && pfzTarget.properties.status) {
              pfzStatus = pfzTarget.properties.status;
              if (pfzStatus === "HIGH") fishingScore = 85;
              else if (pfzStatus === "MEDIUM") fishingScore = 55;
