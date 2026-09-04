@@ -1,6 +1,7 @@
 import httpx
 from agents.state import AgentState
 from datetime import datetime, timedelta, timezone
+import os
 
 async def ocean_node(state: AgentState) -> dict:
     intent = state.get("intent", {})
@@ -29,9 +30,9 @@ async def ocean_node(state: AgentState) -> dict:
             if bbox_str:
                 params["bbox"] = bbox_str
                 
-            # Call our own normalized Copernicus endpoint
+            port = os.environ.get("PORT", "8000")
             r = await client.get(
-                "http://127.0.0.1:8000/marine-data",
+                f"http://127.0.0.1:{port}/marine-data",
                 params=params,
                 timeout=60.0
             )

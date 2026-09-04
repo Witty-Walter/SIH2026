@@ -57,8 +57,10 @@ async def risk_node(state: AgentState) -> dict:
                 
                 # Fetch Ocean Data
                 try:
+                    import os
+                    port = os.environ.get("PORT", "8000")
                     r = await client.get(
-                        "http://127.0.0.1:8000/marine-data",
+                        f"http://127.0.0.1:{port}/marine-data",
                         params={"area_id": area_code, "start_time": iso_time},
                         timeout=60.0
                     )
