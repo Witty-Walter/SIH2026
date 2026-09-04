@@ -11,7 +11,8 @@ export function useWebSocket(sessionId: string) {
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    wsRef.current = new WebSocket(`ws://localhost:8000/ws/chat`);
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/chat";
+    wsRef.current = new WebSocket(wsUrl);
     wsRef.current.onmessage = (event) => {
       const frame: ServerFrame = JSON.parse(event.data);
       switch (frame.type) {
